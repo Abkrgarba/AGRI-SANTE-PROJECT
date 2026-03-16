@@ -1,5 +1,4 @@
-//If reviewed by teammate type yes in capital letter here
-//NJUME BRIAN EPIE STUDENT GRADE CALCULATOR 
+// STUDENT GRADE CALCULATOR 
 
 interface Gradable {
     fun calculateAverage(): Double
