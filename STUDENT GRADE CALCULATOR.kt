@@ -1,271 +1,314 @@
-// STUDENT GRADE CALCULATOR 
+// STUDENT GRADE CALCULATOR
 
-interface Gradable {
-    fun calculateAverage(): Double
-    fun getLetterGrade(): String
-    fun getRemarks(): String
+// INTERFACES (abstract classes with abstract methods in Dart)
+
+abstract class Gradable {
+  double calculateAverage();
+  String getLetterGrade();
+  String getRemarks();
 }
 
-interface Displayable {
-    fun displayInfo()
-    fun displayResult()
+abstract class Displayable {
+  void displayInfo();
+  void displayResult();
 }
 
-interface Assessable {
-    fun addScore(subject: String, score: Double)
-    fun getScores(): Map<String, Double>
+abstract class Assessable {
+  void addScore(String subject, double score);
+  Map<String, double> getScores();
 }
 
-//ABSTRACT BASE CLASS
+// ABSTRACT BASE CLASS
 
-abstract class Person(
-    val id: String,
-    val name: String,
-    val age: Int
-) : Displayable {
+abstract class Person implements Displayable {
+  final String id;
+  final String name;
+  final int age;
 
-    override fun displayInfo() {
-        println("-----------------------------------")
-        println("ID     : $id")
-        println("Name   : $name")
-        println("Age    : $age")
-    }
+  Person(this.id, this.name, this.age);
+
+  @override
+  void displayInfo() {
+    print('-----------------------------------');
+    print('ID     : $id');
+    print('Name   : $name');
+    print('Age    : $age');
+  }
 }
 
-//ABSTRACT STUDENT CLASS
+// ABSTRACT STUDENT CLASS
 
-abstract class Student(
-    id: String,
-    name: String,
-    age: Int,
-    val yearLevel: Int
-) : Person(id, name, age), Gradable, Assessable {
+abstract class Student extends Person implements Gradable, Assessable {
+  final int yearLevel;
+  final Map<String, double> _scores = {};
 
-    protected val scores = mutableMapOf<String, Double>()
+  Student(String id, String name, int age, this.yearLevel)
+      : super(id, name, age);
 
-    override fun addScore(subject: String, score: Double) {
-        require(score in 0.0..100.0) { "Score must be between 0 and 100." }
-        scores[subject] = score
+  @override
+  void addScore(String subject, double score) {
+    if (score < 0.0 || score > 100.0) {
+      throw ArgumentError('Score must be between 0 and 100.');
     }
+    _scores[subject] = score;
+  }
 
-    override fun getScores(): Map<String, Double> = scores.toMap()
+  @override
+  Map<String, double> getScores() => Map.unmodifiable(_scores);
 
-    override fun calculateAverage(): Double {
-        if (scores.isEmpty()) return 0.0
-        return scores.values.sum() / scores.size
+  @override
+  double calculateAverage() {
+    if (_scores.isEmpty) return 0.0;
+    return _scores.values.reduce((a, b) => a + b) / _scores.length;
+  }
+
+  @override
+  String getLetterGrade() {
+    final avg = calculateAverage();
+    if (avg >= 90.0) return 'A';
+    if (avg >= 80.0) return 'B';
+    if (avg >= 70.0) return 'C';
+    if (avg >= 60.0) return 'D';
+    return 'F';
+  }
+
+  @override
+  String getRemarks() {
+    switch (getLetterGrade()) {
+      case 'A':
+        return 'Excellent';
+      case 'B':
+        return 'Good';
+      case 'C':
+        return 'Average';
+      case 'D':
+        return 'Below Average';
+      default:
+        return 'Failed';
     }
+  }
 
-    override fun getLetterGrade(): String {
-        return when (calculateAverage()) {
-            in 90.0..100.0 -> "A"
-            in 80.0..89.99 -> "B"
-            in 70.0..79.99 -> "C"
-            in 60.0..69.99 -> "D"
-            else            -> "F"
-        }
+  @override
+  void displayInfo() {
+    super.displayInfo();
+    print('Year   : Year $yearLevel');
+    print('Type   : ${studentType()}');
+  }
+
+  @override
+  void displayResult() {
+    displayInfo();
+    print('-----------------------------------');
+    print('Subjects & Scores:');
+    if (_scores.isEmpty) {
+      print('  No scores recorded.');
+    } else {
+      _scores.forEach((subject, score) {
+        print('  ${subject.padRight(20)}: ${score.toStringAsFixed(2)}');
+      });
     }
+    print('-----------------------------------');
+    print('Average Grade  : ${calculateAverage().toStringAsFixed(2)}');
+    print('Letter Grade   : ${getLetterGrade()}');
+    print('Remarks        : ${getRemarks()}');
+    print('-----------------------------------\n');
+  }
 
-    override fun getRemarks(): String {
-        return when (getLetterGrade()) {
-            "A"  -> "Excellent"
-            "B"  -> "Good"
-            "C"  -> "Average"
-            "D"  -> "Below Average"
-            else -> "Failed"
-        }
-    }
-
-    override fun displayInfo() {
-        super.displayInfo()
-        println("Year   : Year $yearLevel")
-        println("Type   : ${studentType()}")
-    }
-
-    override fun displayResult() {
-        displayInfo()
-        println("-----------------------------------")
-        println("Subjects & Scores:")
-        if (scores.isEmpty()) {
-            println("  No scores recorded.")
-        } else {
-            scores.forEach { (subject, score) ->
-                println("  %-20s: %.2f".format(subject, score))
-            }
-        }
-        println("-----------------------------------")
-        println("Average Grade  : %.2f".format(calculateAverage()))
-        println("Letter Grade   : ${getLetterGrade()}")
-        println("Remarks        : ${getRemarks()}")
-        println("-----------------------------------\n")
-    }
-
-    abstract fun studentType(): String
+  String studentType();
 }
 
 // CONCRETE STUDENT SUBCLASSES
 
-class UndergraduateStudent(
-    id: String,
-    name: String,
-    age: Int,
-    yearLevel: Int,
-    val major: String
-) : Student(id, name, age, yearLevel) {
+class UndergraduateStudent extends Student {
+  final String major;
 
-    override fun studentType() = "Undergraduate"
+  UndergraduateStudent({
+    required String id,
+    required String name,
+    required int age,
+    required int yearLevel,
+    required this.major,
+  }) : super(id, name, age, yearLevel);
 
-    override fun displayInfo() {
-        super.displayInfo()
-        println("Major  : $major")
-    }
+  @override
+  String studentType() => 'Undergraduate';
+
+  @override
+  void displayInfo() {
+    super.displayInfo();
+    print('Major  : $major');
+  }
 }
 
-class GraduateStudent(
-    id: String,
-    name: String,
-    age: Int,
-    yearLevel: Int,
-    val thesis: String
-) : Student(id, name, age, yearLevel) {
+class GraduateStudent extends Student {
+  final String thesis;
 
-    override fun studentType() = "Graduate"
+  GraduateStudent({
+    required String id,
+    required String name,
+    required int age,
+    required int yearLevel,
+    required this.thesis,
+  }) : super(id, name, age, yearLevel);
 
-    // Graduate students need a higher bar to pass (65 instead of 60)
-    override fun getLetterGrade(): String {
-        return when (calculateAverage()) {
-            in 90.0..100.0 -> "A"
-            in 80.0..89.99 -> "B"
-            in 70.0..79.99 -> "C"
-            in 65.0..69.99 -> "D"
-            else            -> "F"
-        }
-    }
+  @override
+  String studentType() => 'Graduate';
 
-    override fun displayInfo() {
-        super.displayInfo()
-        println("Thesis : $thesis")
-    }
+  // Graduate students need a higher bar to pass (65 instead of 60)
+  @override
+  String getLetterGrade() {
+    final avg = calculateAverage();
+    if (avg >= 90.0) return 'A';
+    if (avg >= 80.0) return 'B';
+    if (avg >= 70.0) return 'C';
+    if (avg >= 65.0) return 'D';
+    return 'F';
+  }
+
+  @override
+  void displayInfo() {
+    super.displayInfo();
+    print('Thesis : $thesis');
+  }
 }
 
-class ScholarshipStudent(
-    id: String,
-    name: String,
-    age: Int,
-    yearLevel: Int,
-    val scholarshipName: String
-) : Student(id, name, age, yearLevel) {
+class ScholarshipStudent extends Student {
+  final String scholarshipName;
 
-    override fun studentType() = "Scholarship Student"
+  ScholarshipStudent({
+    required String id,
+    required String name,
+    required int age,
+    required int yearLevel,
+    required this.scholarshipName,
+  }) : super(id, name, age, yearLevel);
 
-    // Must maintain at least 85 average to keep scholarship
-    fun isScholarshipMaintained(): Boolean = calculateAverage() >= 85.0
+  @override
+  String studentType() => 'Scholarship Student';
 
-    override fun displayResult() {
-        super.displayResult()
-        val status = if (isScholarshipMaintained()) "Scholarship Maintained" else "Scholarship At Risk"
-        println("Scholarship    : $scholarshipName")
-        println("Status         : $status")
-        println("-----------------------------------\n")
-    }
+  // Must maintain at least 85 average to keep scholarship
+  bool isScholarshipMaintained() => calculateAverage() >= 85.0;
+
+  @override
+  void displayResult() {
+    super.displayResult();
+    final status = isScholarshipMaintained()
+        ? 'Scholarship Maintained'
+        : 'Scholarship At Risk';
+    print('Scholarship    : $scholarshipName');
+    print('Status         : $status');
+    print('-----------------------------------\n');
+  }
 }
 
-// GRADE REPORT MANAGER 
+// GRADE REPORT MANAGER
 
-class GradeReportManager : Displayable {
+class GradeReportManager implements Displayable {
+  final List<Student> _studentList = [];
 
-    private val studentList = mutableListOf<Student>()
+  void enrollStudent(Student student) {
+    _studentList.add(student);
+    print(' Enrolled: ${student.name}');
+  }
 
-    fun enrollStudent(student: Student) {
-        studentList.add(student)
-        println(" Enrolled: ${student.name}")
+  void generateAllReports() {
+    print('\n========== GRADE REPORT ==========\n');
+    if (_studentList.isEmpty) {
+      print('No students enrolled.');
+      return;
     }
-
-    fun generateAllReports() {
-        println("\n========== GRADE REPORT ==========\n")
-        if (studentList.isEmpty()) {
-            println("No students enrolled.")
-            return
-        }
-        studentList.forEach { it.displayResult() }
+    for (final student in _studentList) {
+      student.displayResult();
     }
+  }
 
-    fun getTopStudent(): Student? = studentList.maxByOrNull { it.calculateAverage() }
+  Student? getTopStudent() {
+    if (_studentList.isEmpty) return null;
+    return _studentList.reduce((a, b) =>
+        a.calculateAverage() >= b.calculateAverage() ? a : b);
+  }
 
-    override fun displayInfo() {
-        println("Total Students Enrolled: ${studentList.size}")
+  @override
+  void displayInfo() {
+    print('Total Students Enrolled: ${_studentList.length}');
+  }
+
+  @override
+  void displayResult() {
+    displayInfo();
+    final top = getTopStudent();
+    if (top != null) {
+      print(
+          'Top Student: ${top.name} with average ${top.calculateAverage().toStringAsFixed(2)} (${top.getLetterGrade()})');
     }
-
-    override fun displayResult() {
-        displayInfo()
-        val top = getTopStudent()
-        if (top != null) {
-            println("Top Student: ${top.name} with average %.2f (${top.getLetterGrade()})".format(top.calculateAverage()))
-        }
-    }
+  }
 }
 
+// MAIN
 
+void main() {
+  final manager = GradeReportManager();
 
-fun main() {
+  final student1 = UndergraduateStudent(
+    id: 'U001',
+    name: 'Alice Johnson',
+    age: 20,
+    yearLevel: 2,
+    major: 'Computer Science',
+  );
+  student1.addScore('Mathematics', 92.0);
+  student1.addScore('Programming', 88.0);
+  student1.addScore('Data Structures', 95.0);
+  student1.addScore('English', 85.0);
 
-    val manager = GradeReportManager()
+  final student2 = GraduateStudent(
+    id: 'G001',
+    name: 'Bob Martinez',
+    age: 25,
+    yearLevel: 1,
+    thesis: 'Machine Learning in Healthcare',
+  );
+  student2.addScore('Advanced Algorithms', 78.0);
+  student2.addScore('Research Methods', 82.0);
+  student2.addScore('Statistics', 74.0);
+  student2.addScore('Thesis Writing', 80.0);
 
-   
-    val student1 = UndergraduateStudent(
-        id = "U001", name = "Alice Johnson",
-        age = 20, yearLevel = 2, major = "Computer Science"
-    ).apply {
-        addScore("Mathematics", 92.0)
-        addScore("Programming", 88.0)
-        addScore("Data Structures", 95.0)
-        addScore("English", 85.0)
-    }
+  final student3 = ScholarshipStudent(
+    id: 'S001',
+    name: 'Clara Lee',
+    age: 19,
+    yearLevel: 1,
+    scholarshipName: "Dean's Excellence Award",
+  );
+  student3.addScore('Biology', 90.0);
+  student3.addScore('Chemistry', 87.0);
+  student3.addScore('Physics', 83.0);
+  student3.addScore('English', 91.0);
 
-   
-    val student2 = GraduateStudent(
-        id = "G001", name = "Bob Martinez",
-        age = 25, yearLevel = 1, thesis = "Machine Learning in Healthcare"
-    ).apply {
-        addScore("Advanced Algorithms", 78.0)
-        addScore("Research Methods", 82.0)
-        addScore("Statistics", 74.0)
-        addScore("Thesis Writing", 80.0)
-    }
+  final student4 = ScholarshipStudent(
+    id: 'S002',
+    name: 'David Kim',
+    age: 21,
+    yearLevel: 3,
+    scholarshipName: 'STEM Grant',
+  );
+  student4.addScore('Calculus', 72.0);
+  student4.addScore('Physics', 68.0);
+  student4.addScore('Engineering', 75.0);
+  student4.addScore('Technical Writing', 70.0);
 
-    
-    val student3 = ScholarshipStudent(
-        id = "S001", name = "Clara Lee",
-        age = 19, yearLevel = 1, scholarshipName = "Dean's Excellence Award"
-    ).apply {
-        addScore("Biology", 90.0)
-        addScore("Chemistry", 87.0)
-        addScore("Physics", 83.0)
-        addScore("English", 91.0)
-    }
+  // Enroll all students
+  print('\n========== ENROLLMENT ==========');
+  manager.enrollStudent(student1);
+  manager.enrollStudent(student2);
+  manager.enrollStudent(student3);
+  manager.enrollStudent(student4);
 
-    
-    val student4 = ScholarshipStudent(
-        id = "S002", name = "David Kim",
-        age = 21, yearLevel = 3, scholarshipName = "STEM Grant"
-    ).apply {
-        addScore("Calculus", 72.0)
-        addScore("Physics", 68.0)
-        addScore("Engineering", 75.0)
-        addScore("Technical Writing", 70.0)
-    }
+  // Generate full grade reports
+  manager.generateAllReports();
 
-    // Enroll all students
-    println("\n========== ENROLLMENT ==========")
-    manager.enrollStudent(student1)
-    manager.enrollStudent(student2)
-    manager.enrollStudent(student3)
-    manager.enrollStudent(student4)
-
-    // Generate full grade reports
-    manager.generateAllReports()
-
-    // Summary
-    println("========== SUMMARY ==========")
-    manager.displayResult()
-    println("=================================\n")
+  // Summary
+  print('========== SUMMARY ==========');
+  manager.displayResult();
+  print('=================================\n');
 }
